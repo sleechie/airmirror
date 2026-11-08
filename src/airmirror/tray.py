@@ -4,29 +4,22 @@ from __future__ import annotations
 import asyncio
 import logging
 import threading
+import time
 
 import pystray
-from PIL import Image, ImageDraw
+from PIL import Image
 
-from . import receivers, windows
+from . import logo, receivers, windows
 from .session import MirrorOptions, NotPaired, mirror
 
 log = logging.getLogger(__name__)
 
 IDLE, BUSY, LIVE = "idle", "busy", "live"
-COLORS = {IDLE: (235, 235, 235, 255), BUSY: (250, 204, 21, 255), LIVE: (59, 130, 246, 255)}
+DOUBLE_CLICK_GUARD = 1.5  # seconds; a double-click must not start and then immediately stop mirroring
 
 
 def draw_icon(state: str) -> Image.Image:
-    img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    color = COLORS[state]
-    filled = state != IDLE
-    d.rounded_rectangle((4, 8, 60, 46), radius=6, outline=color, width=5, fill=color if filled else None)
-    d.polygon([(32, 34), (14, 60), (50, 60)], fill=color)
-    if filled:
-        d.polygon([(26, 18), (26, 36), (42, 27)], fill=(255, 255, 255, 255))
-    return img
+    return logo.render(state, scale=2)
 
 
 def ask_pin_dialog(tv_name: str) -> str:
@@ -124,9 +117,12 @@ class TrayApp:
         return ok
 
     def toggle(self, *_):
+        if time.monotonic() - self.started_at < DOUBLE_CLICK_GUARD:
+            return
         if self.stop_event is not None:
             self.loop.call_soon_threadsafe(self.stop_event.set)
         elif self.state == IDLE:
+            self.started_at = time.monotonic()
             self.run(self._mirror())
 
     def choose(self, tv: receivers.Receiver):

@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/logo.png" width="160" alt="AirMirror: a pixel-art frog perched on a TV"></p>
+
 # AirMirror
 
 **Mirror your Windows screen to an AirPlay TV. No Apple device or extra hardware needed.**
@@ -9,7 +11,9 @@ Lots of TVs now have AirPlay built in, including Fire TV smart TVs, Samsung, LG,
 1. Download **AirMirrorSetup.exe** from the [latest release](https://github.com/sleechie/airmirror/releases/latest) and run it. You don't need admin rights.
 2. An AirMirror icon appears in the system tray, next to the clock. If you don't see it, check the `^` overflow menu and drag it onto the taskbar.
 3. **Click the icon.** The first time, your TV shows a 4-digit code. Type it into the box that pops up. You only do this once per TV.
-4. From then on, click the icon to start mirroring and click again to stop. The icon turns blue while you're live.
+4. From then on, click the icon to start mirroring and click again to stop. The frog's TV shows what's happening: dark when idle, amber while connecting, blue while you're live.
+
+   <img src="docs/states.png" width="240" alt="Tray icon states: idle, connecting, mirroring">
 
 Things you may see the first time:
 - **"Windows protected your PC"**: the installer isn't code-signed. Click *More info* → *Run anyway*.
