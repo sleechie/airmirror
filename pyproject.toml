@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "airmirror"
+dynamic = ["version"]
+description = "Mirror your Windows screen to AirPlay 2 TVs (Fire TV, Samsung, LG, Roku...) with no extra hardware."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [{ name = "Braden Sanders" }]
+keywords = ["airplay", "screen-mirroring", "fire-tv", "windows", "cast"]
+classifiers = [
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Video",
+]
+dependencies = [
+    # session.py reads pyatv's pair-verify secret (srp._shared); bump deliberately.
+    "pyatv>=0.16,<0.19",
+    # srptools 2.0 changed SRPClientSession's signature and breaks pyatv pairing.
+    "srptools>=1,<2",
+    "cryptography>=41",
+    "pystray>=0.19",
+    "Pillow>=10",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+airmirror = "airmirror.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/sleechie/airmirror"
+
+[tool.setuptools.dynamic]
+version = { attr = "airmirror.__version__" }
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

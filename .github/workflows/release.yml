@@ -1,0 +1,55 @@
+name: Build installer
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  # LGPL build: includes NVENC, AMF, QSV, Media Foundation and ddagrab, keeps redistribution simple.
+  FFMPEG_ZIP: https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n8.1-latest-win64-lgpl-8.1.zip
+
+jobs:
+  installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install . pyinstaller
+      - name: Fetch FFmpeg
+        shell: pwsh
+        run: |
+          Invoke-WebRequest $env:FFMPEG_ZIP -OutFile ffmpeg.zip
+          Expand-Archive ffmpeg.zip -DestinationPath ffmpeg
+          $bin = Get-ChildItem ffmpeg -Recurse -Filter ffmpeg.exe | Select-Object -First 1
+          New-Item -ItemType Directory -Force build | Out-Null
+          Copy-Item $bin.FullName build\ffmpeg.exe
+          Copy-Item (Get-ChildItem ffmpeg -Recurse -Filter LICENSE.txt | Select-Object -First 1).FullName build\FFMPEG-LICENSE.txt
+      - name: Smoke-test encoders in this FFmpeg
+        run: build\ffmpeg.exe -hide_banner -encoders | findstr /r "h264_nvenc h264_amf h264_qsv h264_mf"
+      - name: Build AirMirror.exe
+        run: |
+          python packaging\make_icon.py build\airmirror.ico
+          pyinstaller --noconfirm --windowed --name AirMirror --icon build\airmirror.ico `
+            --collect-submodules pyatv --hidden-import pystray._win32 --hidden-import _cffi_backend `
+            --add-binary "build\ffmpeg.exe;." --add-data "build\FFMPEG-LICENSE.txt;." --add-data "LICENSE;." `
+            packaging\app.py
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $version = if ($env:GITHUB_REF_TYPE -eq "tag") { $env:GITHUB_REF_NAME.TrimStart("v") } else { "0.0.0-dev" }
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=$version" packaging\installer.iss
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AirMirrorSetup
+          path: dist/AirMirrorSetup.exe
+      - name: Attach to release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload ${{ github.ref_name }} dist/AirMirrorSetup.exe --clobber
