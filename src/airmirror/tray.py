@@ -42,6 +42,7 @@ class TrayApp:
         self.found: list[receivers.Receiver] = []
         self.selected: str | None = receivers.load_settings().get("default_receiver")
         self.stop_event: asyncio.Event | None = None
+        self.started_at = 0.0
         self.state = IDLE
         self.icon = pystray.Icon("airmirror", draw_icon(IDLE), "AirMirror", menu=self._menu())
 
